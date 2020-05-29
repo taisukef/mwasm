@@ -6576,8 +6576,8 @@ var index = async () => {
 
             case 'MemoryMap':
               {
-                this.context[$attributes] = { type: token.type, size: 0 };
-                this.defineMember(token.defines, this.context, { type: token.type, preprocessed: preprocessed });
+                this.context[$attributes] = { type: token.type, size: 0};
+                this.defineMember(token.defines, this.context, { type: token.type, preprocessed: preprocessed,memoryMap:true });
               }
               break;
             // マクロ定義
@@ -6783,6 +6783,7 @@ var index = async () => {
         let offset = 0;
         const rootContext = this.context;
         const structDefinition = opts.type == 'StructDefinition';
+        const memoryMap = opts.memoryMap;
         for (const def of defines) {
           switch (def.type) {
             case "MemoryLabel":
@@ -6812,7 +6813,7 @@ var index = async () => {
                       // Native Type
                       const initData = def.initData ? this.makeDataString(def, offset + this.startOffset) : null;
                       c = currentContext[def.id.id] = {
-                        [$attributes]: Object.assign(clone(def.varType), { offset: offset + this.startOffset, initData: initData })
+                        [$attributes]: Object.assign(clone(def.varType), { offset: offset + this.startOffset, initData: initData,memoryMap:memoryMap })
                       };
                       if (initData) {
                         //console.log(opts);
@@ -6844,7 +6845,7 @@ var index = async () => {
 
                       const initData = def.initData ? this.makeDataString(def, offset + this.startOffset) : null;
                       c = currentContext[def.id.id] = Object.assign(clone(structType), {
-                        [$attributes]: Object.assign(clone(structType[$attributes]), { offset: offset + this.startOffset, initData: initData })
+                        [$attributes]: Object.assign(clone(structType[$attributes]), { offset: offset + this.startOffset, initData: initData,memoryMap:memoryMap })
                       });
 
                       if (initData) {
@@ -6889,7 +6890,7 @@ var index = async () => {
                     offset += c[$attributes].size * num;
                     currentContext[$attributes].size += c[$attributes].size * num;
                     c[$attributes].log2 = Math.log2(c[$attributes].size) | 0;
-
+                    c[$attributes].memoryMap = memoryMap;
 
                     // 初期値の設定
                   }
@@ -7133,6 +7134,17 @@ var index = async () => {
       }
       , 2);
     await fs.promises.writeFile(path.basename(args.input, '.mwat') + '.context.json', contextJson, 'utf-8');
+    
+    const out = {};
+    for(const i in context.context){
+      const p = context.context[i];
+      if(!(p.type && p.type == 'MacroDefinition')){
+        out[i] = p;    
+      }
+    }
+
+    await fs.promises.writeFile(path.basename(args.input, '.mwat') + '.defs.json',JSON.stringify(out,null,1),'utf-8');
+  
     await fs.promises.writeFile(path.basename(args.input, '.mwat') + '.wat', preprocessedSourceText, 'utf-8');
     process.chdir(backup);
 

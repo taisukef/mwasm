@@ -127,7 +127,8 @@
   },
   "_attributes_": {
     "type": "MemoryMap",
-    "size": 2480
+    "size": 2480,
+    "memoryMap": true
   },
   "b": {
     "_attributes_": {
@@ -148,6 +149,7 @@
           "dataString": ""
         }
       ],
+      "memoryMap": true,
       "num": 10,
       "log2": 7
     },
